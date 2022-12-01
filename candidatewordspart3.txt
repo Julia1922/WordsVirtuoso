@@ -1,0 +1,74 @@
+import java.io.File
+const val alphabet = "abcdefghijklmnopqrstuvwxyz"
+fun isNotFiveLetter(str: String): Boolean {
+    return str.length !== 5
+}
+fun isrRepeatedLetters(str: String): Boolean{
+    val string = str.toLowerCase()
+    for (i in 0..3) {
+        var ch = string[i]
+        for (j in i + 1..4) {
+            if (string[j] == ch) return true
+        }
+    }
+    return false
+}
+fun isNotEnglishLetter(str: String): Boolean {
+    val string = str.toLowerCase()
+    var count = 0
+    for (i in 0..4) {
+        if (string[i] in alphabet) count = count + 1
+    }
+    if (count == 5) return false
+    else return true
+}
+fun wordsIsTrue(words: List<String>): Int {
+    var numOfInvWords = 0
+    for (word in words) {
+        when {
+            isNotFiveLetter(word) -> numOfInvWords++
+            isNotEnglishLetter(word) -> numOfInvWords++
+            isrRepeatedLetters(word) -> numOfInvWords++
+        }
+    }
+    return numOfInvWords
+}
+fun candidateInWords(words: List<String>, wordsCandidate: List<String>):Int {
+    var equals = 0
+    for (i in 0..wordsCandidate.lastIndex) {
+        for (j in 0..words.lastIndex)
+            if (wordsCandidate[i].toLowerCase() == words[j].toLowerCase()) equals++
+    }
+    return wordsCandidate.size - equals
+}
+fun candidateWords(words: List<String>,wordsCandidate: List<String>,fileNameWords: String,fileNameCandidate: String, ){
+    val numberInvWords = wordsIsTrue(words)
+    val numberInvCandidate = wordsIsTrue(wordsCandidate)
+    val numberOfEquals = candidateInWords(words, wordsCandidate)
+    when {
+        numberInvWords > 0 -> println("Error: $numberInvWords invalid words were found in the $fileNameWords file.")
+        numberInvCandidate > 0 -> println("Error: $numberInvCandidate invalid words were found in the $fileNameCandidate file.")
+        numberOfEquals > 0 -> println("Error: $numberOfEquals candidate words are not included in the $fileNameWords file.")
+        else -> println("Words Virtuoso")
+    }
+}
+
+fun main(args: Array<String>) {
+    if (args.size == 2) {
+        val fileNameWords = args[0]
+        val fileNameCandidate = args[1]
+        try {
+            val words = File(fileNameWords).readLines()
+            try {
+                val wordsCandidate = File(fileNameCandidate).readLines()
+                candidateWords(words, wordsCandidate, fileNameWords, fileNameCandidate)
+
+            } catch (e: Exception) {
+                println("Error: The candidate words file $fileNameCandidate doesn't exist.")
+            }
+        } catch (e: Exception) {
+            println("Error: The words file $fileNameWords doesn't exist.")
+        }
+    }
+    else println("Error: Wrong number of arguments.")
+}

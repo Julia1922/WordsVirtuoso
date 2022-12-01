@@ -1,0 +1,191 @@
+package wordsvirtuoso
+import java.io.File
+import kotlin.random.Random
+
+const val alphabet = "abcdefghijklmnopqrstuvwxyz"
+fun isNotFiveLetter(str: String): Boolean {
+    return str.length !== 5
+}
+fun isrRepeatedLetters(str: String): Boolean{
+    val string = str.toLowerCase()
+    for (i in 0..3) {
+        var ch = string[i]
+        for (j in i + 1..4) {
+            if (string[j] == ch) return true
+        }
+    }
+    return false
+}
+fun isNotEnglishLetter(str: String): Boolean {
+    val string = str.toLowerCase()
+    var count = 0
+    for (i in 0..4) {
+        if (string[i] in alphabet) count = count + 1
+    }
+    if (count == 5) return false
+    else return true
+}
+fun wordsIsTrue(words: List<String>): Int {
+    var numOfInvWords = 0
+    for (word in words) {
+        when {
+            isNotFiveLetter(word) -> numOfInvWords++
+            isNotEnglishLetter(word) -> numOfInvWords++
+            isrRepeatedLetters(word) -> numOfInvWords++
+        }
+    }
+    return numOfInvWords
+}
+fun isNotWordLIst(str: String,words: List<String>): Boolean {
+    return !words.contains(str)
+}
+fun error(str: String, words: List<String>): Boolean {
+    return isNotFiveLetter(str) || isrRepeatedLetters(str) || isNotEnglishLetter(str) || isNotWordLIst(str, words)
+}
+fun printError(str: String, words: List<String>){
+    when {
+        isNotFiveLetter(str) -> println("The input isn't a 5-letter word.")
+        isNotEnglishLetter(str) -> println("One or more letters of the input aren't valid.")
+        isrRepeatedLetters(str) -> println("The input has duplicate letters.")
+        isNotWordLIst(str, words) -> println("The input word isn't included in my words list.")
+    }
+}
+fun candidateInWords(words: List<String>, wordsCandidate: List<String>):Int {
+    var equals = 0
+    for (i in 0..wordsCandidate.lastIndex) {
+        for (j in 0..words.lastIndex)
+            if (wordsCandidate[i].toLowerCase() == words[j].toLowerCase()) equals++
+    }
+    return wordsCandidate.size - equals
+}
+fun candidateWords(words: List<String>,wordsCandidate: List<String>,fileNameWords: String,fileNameCandidate: String, ){
+    val numberInvWords = wordsIsTrue(words)
+    val numberInvCandidate = wordsIsTrue(wordsCandidate)
+    val numberOfEquals = candidateInWords(words, wordsCandidate)
+    when {
+        numberInvWords > 0 -> println("Error: $numberInvWords invalid words were found in the $fileNameWords file.")
+        numberInvCandidate > 0 -> println("Error: $numberInvCandidate invalid words were found in the $fileNameCandidate file.")
+        numberOfEquals > 0 -> println("Error: $numberOfEquals candidate words are not included in the $fileNameWords file.")
+        else -> {println("Words Virtuoso\n")
+            var startTime = System.currentTimeMillis()
+            game(words, wordsCandidate, startTime)
+        }
+    }
+}
+fun printColor(input: String,secretWord: String) {
+    var str = ""
+    for (i in 0..4) {
+        for (j in 0..4) {
+            if (input[i] == secretWord[j]) {
+                if (i == j) { str = str + input[i].toUpperCase()
+                    print("\u001B[48:5:10m${input[i].toUpperCase()}\u001B[0m")
+                } else { str = str + input[i]
+                    print("\u001B[48:5:11m${input[i].toUpperCase()}\u001B[0m")}
+            }
+        }
+        if (str.length == i) {
+            str = str + "_"
+            print("\u001B[48:5:7m${input[i].toUpperCase()}\u001B[0m")}
+    }
+    println()
+}
+fun clue(input: String,secretWord: String): String {
+    var str = ""
+    for (i in 0..4) {
+        for (j in 0..4) {
+            if (input[i] == secretWord[j]) {
+                if (i == j){ str = str + input[i].toUpperCase()}
+
+                else str = str + input[i]
+            }
+        }
+        if (str.length == i) {
+            str = str + "_"
+        }
+        //println("$i $str")
+    }
+    return str
+}
+fun game(words: List<String>, wordsCandidate: List<String>,startTime: Long) {
+    val numOfWordCand = Random.nextInt(0, wordsCandidate.size)
+    val secretWord = wordsCandidate[numOfWordCand].toLowerCase()
+    val tries = mutableSetOf<String>()
+    val wrongChars = mutableSetOf<String>()
+    //println(secretWord)
+    var clueString = ""
+    while (true) {
+        println("Input a 5-letter word:")
+        //println("start time $startTime")
+        val input = readln().toLowerCase()
+        if (input == "exit") {
+            println("The game is over.")
+            break
+        } else if (error(input, words)) {
+            printError(input, words)
+
+        } else {
+            clueString = clue(input, secretWord)
+            if (clueString.toLowerCase() == secretWord) {
+                var endTime = System.currentTimeMillis()
+                val duration = (endTime - startTime) / 1000
+                printWin(tries, duration, secretWord)
+                break
+            } else {
+                tries.add(input)
+                printColorClue(tries, secretWord)
+                wrongStirng(input, clueString).forEach { wrongChars.add(it.toString()) }
+                var str = wrongChars.sorted().joinToString("")
+                println("\u001B[48:5:14m$str\u001B[0m")
+                clueString = ""
+            }
+        }
+    }
+}
+fun wrongStirng(input: String, clueString: String):String {
+    val rightChars = clueString.toUpperCase().replace("_", "")
+    //println(rightChars)
+    var str = input.toUpperCase()
+    for (ch in str) {
+        for (chr in rightChars) {
+            if (ch == chr) str = str.replace("$chr", "")
+        }
+    }
+    return str
+}
+fun printWin(tries: MutableSet<String>, duration: Long,secretWord: String) {
+    if (tries.size > 0) {
+        printColorClue(tries, secretWord)
+        printSecretWord(secretWord)
+        println("Correct!\nThe solution was found after ${tries.size + 1} tries in $duration seconds.")
+    }
+    else{
+        printSecretWord(secretWord)
+        println("Correct!\nAmazing luck! The solution was found at once.")}
+}
+fun printColorClue(tries: MutableSet<String>, secretWord: String) {
+    for (trie in tries) {
+        printColor(trie, secretWord)
+    }
+}
+fun printSecretWord(secretWord: String) {
+    printColor(secretWord,secretWord)
+}
+fun main(args: Array<String>) {
+    if (args.size == 2) {
+        val fileNameWords = args[0]
+        val fileNameCandidate = args[1]
+        try {
+            val words = File(fileNameWords).readLines()
+            try {
+                val wordsCandidate = File(fileNameCandidate).readLines()
+                candidateWords(words, wordsCandidate, fileNameWords, fileNameCandidate)
+
+            } catch (e: Exception) {
+                println("Error: The candidate words file $fileNameCandidate doesn't exist.")
+            }
+        } catch (e: Exception) {
+            println("Error: The words file $fileNameWords doesn't exist.")
+        }
+    }
+    else println("Error: Wrong number of arguments.")
+}
